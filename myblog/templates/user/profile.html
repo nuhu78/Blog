@@ -1,0 +1,162 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Profile - MyBlog{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-3 mb-4">
+        <!-- Profile Sidebar -->
+        <div class="card">
+            <div class="card-body text-center">
+                <img src="https://ui-avatars.com/api/?name={{ user.username }}&size=120" 
+                     alt="{{ user.username }}" 
+                     class="rounded-circle mb-3" width="120" height="120">
+                <h5 class="card-title">{{ user.first_name|default:user.username }}</h5>
+                <p class="text-muted small">@{{ user.username }}</p>
+                <p class="text-muted small">{{ user.email }}</p>
+                <hr>
+                <p class="small">Member since {{ user.date_joined|date:"F Y" }}</p>
+            </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="list-group mt-3">
+            <a href="{% url 'profile' %}" class="list-group-item list-group-item-action {% if section == 'profile' %}active{% endif %}">
+                <i class="fas fa-user"></i> Profile Info
+            </a>
+            <a href="{% url 'profile' %}?section=posts" class="list-group-item list-group-item-action {% if section == 'posts' %}active{% endif %}">
+                <i class="fas fa-file-alt"></i> My Posts
+            </a>
+            <a href="{% url 'profile' %}?section=update" class="list-group-item list-group-item-action {% if section == 'update' %}active{% endif %}">
+                <i class="fas fa-edit"></i> Update Profile
+            </a>
+        </div>
+    </div>
+
+    <div class="col-lg-9">
+        <!-- Profile Info Section -->
+        {% if section == 'profile' %}
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-info-circle"></i> Profile Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-sm-4">
+                        <h6 class="mb-0">Username</h6>
+                    </div>
+                    <div class="col-sm-8">
+                        <p>{{ user.username }}</p>
+                    </div>
+                </div>
+                <hr>
+                <div class="row mb-3">
+                    <div class="col-sm-4">
+                        <h6 class="mb-0">First Name</h6>
+                    </div>
+                    <div class="col-sm-8">
+                        <p>{{ user.first_name|default:"Not set" }}</p>
+                    </div>
+                </div>
+                <hr>
+                <div class="row mb-3">
+                    <div class="col-sm-4">
+                        <h6 class="mb-0">Last Name</h6>
+                    </div>
+                    <div class="col-sm-8">
+                        <p>{{ user.last_name|default:"Not set" }}</p>
+                    </div>
+                </div>
+                <hr>
+                <div class="row mb-3">
+                    <div class="col-sm-4">
+                        <h6 class="mb-0">Email</h6>
+                    </div>
+                    <div class="col-sm-8">
+                        <p>{{ user.email }}</p>
+                    </div>
+                </div>
+                <hr>
+                <div class="row">
+                    <div class="col-sm-4">
+                        <h6 class="mb-0">Member Since</h6>
+                    </div>
+                    <div class="col-sm-8">
+                        <p>{{ user.date_joined|date:"F d, Y g:i A" }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- My Posts Section -->
+        {% if section == 'posts' %}
+        <div>
+            <h4 class="mb-4"><i class="fas fa-file-alt"></i> My Posts</h4>
+            
+            {% if posts %}
+                <div class="row">
+                    {% for post in posts %}
+                    <div class="col-md-6 mb-4">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h5 class="card-title post-title">{{ post.title }}</h5>
+                                <p class="card-text small text-muted">
+                                    {{ post.created_at|date:"M d, Y" }}
+                                </p>
+                                <p class="card-text">{{ post.content|truncatewords:15|safe }}</p>
+                                
+                                <div class="d-flex gap-2">
+                                    <a href="{% url 'post_detail' post.id %}" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-eye"></i> View
+                                    </a>
+                                    <a href="{% url 'post_update' post.id %}" class="btn btn-sm btn-warning">
+                                        <i class="fas fa-edit"></i> Edit
+                                    </a>
+                                    <a href="{% url 'post_delete' post.id %}" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure?')">
+                                        <i class="fas fa-trash"></i> Delete
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="card-footer bg-light small">
+                                <i class="fas fa-comments"></i> {{ post.comment_set.count }} |
+                                <i class="fas fa-heart"></i> {{ post.liked_users.count }} |
+                                <i class="fas fa-eye"></i> {{ post.view_count }}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+            <div class="alert alert-info text-center py-5">
+                <i class="fas fa-inbox fa-2x mb-3"></i>
+                <p>You haven't written any posts yet.</p>
+                <a href="{% url 'post_create' %}" class="btn btn-primary">
+                    <i class="fas fa-pen"></i> Write Your First Post
+                </a>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <!-- Update Profile Section -->
+        {% if section == 'update' %}
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-edit"></i> Update Profile</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    {% csrf_token %}
+                    {{ form|crispy }}
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Save Changes
+                    </button>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

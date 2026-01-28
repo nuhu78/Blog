@@ -1,0 +1,232 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}{{ post.title }} - MyBlog{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Main Content -->
+    <div class="col-lg-8">
+        <!-- Post Header -->
+        <article class="card mb-4">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div>
+                        <h1 class="card-title post-title mb-2">{{ post.title }}</h1>
+                    </div>
+                    {% if user == post.author %}
+                    <div class="btn-group btn-group-sm">
+                        <a href="{% url 'post_update' post.id %}" class="btn btn-warning" title="Edit Post">
+                            <i class="fas fa-edit"></i> Edit
+                        </a>
+                        <a href="{% url 'post_delete' post.id %}" class="btn btn-danger" title="Delete Post" onclick="return confirm('Are you sure?')">
+                            <i class="fas fa-trash"></i> Delete
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Post Meta -->
+                <div class="post-meta mb-4 pb-3 border-bottom">
+                    <p class="mb-2 text-muted">
+                        <img src="https://ui-avatars.com/api/?name={{ post.author.username }}" 
+                             alt="{{ post.author.username }}" 
+                             width="32" height="32" class="rounded-circle me-2">
+                        <strong>{{ post.author.first_name|default:post.author.username }}</strong>
+                    </p>
+                    <p class="small text-muted mb-2">
+                        <i class="fas fa-calendar-alt"></i> Published on {{ post.created_at|date:"F d, Y" }} at {{ post.created_at|time:"g:i A" }}
+                        {% if post.updated_at != post.created_at %}
+                        <br><i class="fas fa-pen-square"></i> Last updated {{ post.updated_at|date:"F d, Y" }}
+                        {% endif %}
+                    </p>
+
+                    <div class="mb-2">
+                        {% if post.Catagory %}
+                        <span class="badge bg-info">
+                            <i class="fas fa-folder"></i> {{ post.Catagory.name }}
+                        </span>
+                        {% endif %}
+                    </div>
+
+                    <div class="d-flex gap-3 align-items-center">
+                        <span class="text-muted"><i class="fas fa-eye"></i> {{ post.view_count }} views</span>
+                        <span class="text-muted"><i class="fas fa-comments"></i> {{ comments.count }} comments</span>
+                    </div>
+                </div>
+
+                <!-- Post Tags -->
+                {% if post.tags.all %}
+                <div class="mb-4">
+                    {% for tag in post.tags.all %}
+                        <a href="{% url 'post_list' %}?tag={{ tag.name }}" class="badge bg-secondary text-decoration-none">
+                            <i class="fas fa-tag"></i> {{ tag.name }}
+                        </a>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <!-- Post Content -->
+                <div class="post-content mb-4">
+                    {{ post.content|safe }}
+                </div>
+
+                <!-- Post Actions -->
+                <div class="post-actions py-3 border-top border-bottom">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            {% if user.is_authenticated %}
+                                <form method="POST" action="{% url 'like_post' post.id %}" class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-lg {% if is_liked %}btn-danger{% else %}btn-outline-danger{% endif %}" style="border: none;">
+                                        <i class="fas fa-heart"></i> 
+                                        <span id="like-count">{{ like_count }}</span>
+                                        {% if is_liked %}Unlike{% else %}Like{% endif %}
+                                    </button>
+                                </form>
+                            {% else %}
+                                <button class="btn btn-lg btn-outline-danger" disabled title="Login to like">
+                                    <i class="fas fa-heart"></i> {{ like_count }}
+                                </button>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <button class="btn btn-outline-secondary" onclick="sharePost()">
+                                <i class="fas fa-share-alt"></i> Share
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </article>
+
+        <!-- Comments Section -->
+        <div class="comment-section">
+            <h3 class="mb-4"><i class="fas fa-comments"></i> Comments ({{ comments.count }})</h3>
+
+            <!-- Comment Form -->
+            {% if user.is_authenticated %}
+            <div class="card mb-4">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0">Leave a Comment</h6>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        {% csrf_token %}
+                        {{ comment_form|crispy }}
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-comment"></i> Post Comment
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% else %}
+            <div class="alert alert-info mb-4">
+                <i class="fas fa-sign-in-alt"></i> 
+                <a href="{% url 'login' %}">Login</a> to leave a comment.
+            </div>
+            {% endif %}
+
+            <!-- Comments List -->
+            {% if comments %}
+                {% for comment in comments %}
+                <div class="comment card mb-3">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div class="d-flex align-items-center">
+                                <img src="https://ui-avatars.com/api/?name={{ comment.author.username }}" 
+                                     alt="{{ comment.author.username }}" 
+                                     width="40" height="40" class="rounded-circle me-3">
+                                <div>
+                                    <p class="comment-author mb-0">{{ comment.author.first_name|default:comment.author.username }}</p>
+                                    <p class="comment-date mb-0">{{ comment.created_at|date:"F d, Y" }} at {{ comment.created_at|time:"g:i A" }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <p class="mb-0">{{ comment.content }}</p>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+            <div class="alert alert-info text-center py-4">
+                <i class="fas fa-inbox fa-2x mb-2"></i>
+                <p class="mb-0">No comments yet. Be the first to comment!</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+        <div class="sidebar">
+            <!-- Author Card -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h6 class="mb-0"><i class="fas fa-user"></i> About the Author</h6>
+                </div>
+                <div class="card-body text-center">
+                    <img src="https://ui-avatars.com/api/?name={{ post.author.username }}&size=100" 
+                         alt="{{ post.author.username }}" 
+                         class="rounded-circle mb-3" width="80" height="80">
+                    <h5 class="card-title">{{ post.author.first_name|default:post.author.username }}</h5>
+                    <p class="card-text text-muted">{{ post.author.email }}</p>
+                    <p class="small text-muted">Member since {{ post.author.date_joined|date:"F Y" }}</p>
+                </div>
+            </div>
+
+            <!-- Related Posts (Category) -->
+            {% if post.Catagory %}
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h6 class="mb-0"><i class="fas fa-folder"></i> Same Category</h6>
+                </div>
+                <ul class="list-group list-group-flush">
+                    {% for p in post.Catagory.post_set.all %}
+                        {% if p.id != post.id %}
+                        <li class="list-group-item">
+                            <a href="{% url 'post_detail' p.id %}" class="text-decoration-none">
+                                {{ p.title|truncatewords:5 }}
+                            </a>
+                            <br>
+                            <small class="text-muted">{{ p.created_at|date:"M d, Y" }}</small>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            <!-- Tags -->
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h6 class="mb-0"><i class="fas fa-tags"></i> Tags</h6>
+                </div>
+                <div class="card-body">
+                    {% for tag in post.tags.all %}
+                        <a href="{% url 'post_list' %}?tag={{ tag.name }}" class="badge bg-secondary text-decoration-none mb-2">
+                            {{ tag.name }}
+                        </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function sharePost() {
+    const text = "{{ post.title }}";
+    const url = "{{ request.build_absolute_uri }}";
+    
+    if (navigator.share) {
+        navigator.share({
+            title: "{{ post.title }}",
+            text: text,
+            url: url
+        }).catch(err => console.log('Error sharing:', err));
+    } else {
+        alert('Share this post:\n' + url);
+    }
+}
+</script>
+{% endblock %}

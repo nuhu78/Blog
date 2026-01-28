@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}{% if form.instance.pk %}Edit Post{% else %}Create New Post{% endif %} - MyBlog{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">
+                    {% if form.instance.pk %}
+                        <i class="fas fa-edit"></i> Edit Post
+                    {% else %}
+                        <i class="fas fa-pen-fancy"></i> Create New Post
+                    {% endif %}
+                </h4>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    {% csrf_token %}
+                    
+                    {{ form|crispy }}
+
+                    {% if form.instance.pk %}
+                    <div class="alert alert-info mb-3">
+                        <small>
+                            <i class="fas fa-info-circle"></i> 
+                            Originally published: <strong>{{ form.instance.created_at|date:"F d, Y g:i A" }}</strong>
+                        </small>
+                    </div>
+                    {% endif %}
+
+                    <div class="d-flex gap-2 justify-content-between">
+                        <div>
+                            {% if form.instance.pk %}
+                                <a href="{% url 'post_detail' form.instance.id %}" class="btn btn-secondary">
+                                    <i class="fas fa-arrow-left"></i> Cancel
+                                </a>
+                            {% else %}
+                                <a href="{% url 'post_list' %}" class="btn btn-secondary">
+                                    <i class="fas fa-arrow-left"></i> Cancel
+                                </a>
+                            {% endif %}
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> 
+                            {% if form.instance.pk %}Update Post{% else %}Publish Post{% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
