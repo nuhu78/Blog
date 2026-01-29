@@ -77,7 +77,7 @@ def like_post(request,id):
         post.liked_users.remove(request.user)
     else:
         post.liked_users.add(request.user)
-    return redirect('post_detail',id=post.id)
+    return redirect('post_list')
 
 @login_required
 def post_create(request):
